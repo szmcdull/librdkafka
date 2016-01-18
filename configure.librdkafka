@@ -41,6 +41,7 @@ function checks {
     # optional libs
     mkl_lib_check "zlib" "WITH_ZLIB" disable CC "-lz"
     mkl_lib_check "libcrypto" "" disable CC "-lcrypto"
+    mkl_lib_check "liblz4" "WITH_LZ4" disable CC "-llz4"
 
     if [[ "$ENABLE_SSL" == "y" ]]; then
 	mkl_meta_set "libssl" "deb" "libssl-dev"

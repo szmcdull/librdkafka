@@ -9,6 +9,8 @@ typedef enum {
 	RD_KAFKA_COMPRESSION_NONE,
 	RD_KAFKA_COMPRESSION_GZIP = 0x1,
 	RD_KAFKA_COMPRESSION_SNAPPY = 0x2,
+        RD_KAFKA_COMPRESSION_LZ4 = 0x3,
+        RD_KAFKA_COMPRESSION_LZ4F = 0x4,
 	RD_KAFKA_COMPRESSION_INHERIT /* Inherit setting from global conf */
 } rd_kafka_compression_t;
 

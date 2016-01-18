@@ -507,6 +507,10 @@ static const struct rd_kafka_property rd_kafka_properties[] = {
 #if WITH_SNAPPY
 			{ RD_KAFKA_COMPRESSION_SNAPPY, "snappy" },
 #endif
+#if WITH_LZ4
+                        { RD_KAFKA_COMPRESSION_LZ4, "lz4" },
+                        { RD_KAFKA_COMPRESSION_LZ4F, "lz4f" },
+#endif
 			{ 0 }
 		} },
 	{ _RK_GLOBAL|_RK_PRODUCER, "batch.num.messages", _RK_C_INT,
