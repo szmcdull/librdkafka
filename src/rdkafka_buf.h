@@ -29,6 +29,7 @@
 
 #include "rdkafka_int.h"
 #include "rdcrc32.h"
+#include "rdlist.h"
 
 typedef struct rd_kafka_broker_s rd_kafka_broker_t;
 
@@ -259,8 +260,6 @@ struct rd_kafka_buf_s { /* rd_kafka_buf_t */
 	rd_refcnt_t rkbuf_refcnt;
 	void   *rkbuf_opaque;
 
-        int32_t rkbuf_op_version;    /* Originating queue version,
-                                      * NOT THE PROTOCOL VERSION! */
 	int     rkbuf_retries;
 
 	rd_ts_t rkbuf_ts_enq;
@@ -268,7 +267,11 @@ struct rd_kafka_buf_s { /* rd_kafka_buf_t */
 				   * after response: RTT. */
 	rd_ts_t rkbuf_ts_timeout;
 
-        int64_t rkbuf_offset;  /* Used by OffsetCommit */
+        int64_t rkbuf_offset;     /* Used by OffsetCommit */
+
+	int32_t rkbuf_op_version;      /* Single Op version */
+	rd_list_t *rkbuf_rktp_vers;    /* Toppar + Op Version map.
+					* Used by FetchRequest. */
 
 	rd_kafka_msgq_t rkbuf_msgq;
 };

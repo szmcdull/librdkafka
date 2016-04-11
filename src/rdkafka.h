@@ -256,6 +256,8 @@ typedef enum {
 	RD_KAFKA_RESP_ERR__AUTHENTICATION = -169,
 	/** No stored offset */
 	RD_KAFKA_RESP_ERR__NO_OFFSET = -168,
+	/** Outdated */
+	RD_KAFKA_RESP_ERR__OUTDATED = -167,
 	/** End internal error codes */
 	RD_KAFKA_RESP_ERR__END = -100,
 
@@ -1643,7 +1645,7 @@ int rd_kafka_consume_start_queue(rd_kafka_topic_t *rkt, int32_t partition,
  * all messages currently in the local queue.
  *
  * NOTE: To enforce synchronisation this call will block until the internal
- *       fetcher has terminated and offsets are commited to configured
+ *       fetcher has terminated and offsets are committed to configured
  *       storage method.
  *
  * The application needs to be stop all consumers before calling
@@ -1826,7 +1828,7 @@ int rd_kafka_consume_callback_queue(rd_kafka_queue_t *rkqu,
 /**
  * @brief Store offset \p offset for topic \p rkt partition \p partition.
  *
- * The offset will be commited (written) to the offset store according
+ * The offset will be committed (written) to the offset store according
  * to \c `auto.commit.interval.ms`.
  *
  * @remark \c `auto.commit.enable` must be set to "false" when using this API.
@@ -1978,7 +1980,7 @@ rd_kafka_commit_message (rd_kafka_t *rk, const rd_kafka_message_t *rkmessage,
 
 
 /**
- * @brief Retrieve committed positions (offsets) for topics+partitions.
+ * @brief Retrieve committed offsets for topics+partitions.
  *
  * The \p offset field of each requested partition will either be set to
  * stored offset or to RD_KAFKA_OFFSET_INVALID in case there was no stored
@@ -1990,9 +1992,28 @@ rd_kafka_commit_message (rd_kafka_t *rk, const rd_kafka_message_t *rkmessage,
  *          Else returns an error code.
  */
 RD_EXPORT rd_kafka_resp_err_t
+rd_kafka_committed (rd_kafka_t *rk,
+		    rd_kafka_topic_partition_list_t *partitions,
+		    int timeout_ms);
+
+
+
+/**
+ * @brief Retrieve current positions (offsets) for topics+partitions.
+ *
+ * The \p offset field of each requested partition will be set to the offset
+ * of the last consumed message + 1, or RD_KAFKA_OFFSET_INVALID in case there was
+ * previous message.
+ *
+ * @returns RD_KAFKA_RESP_ERR_NO_ERROR on success in which case the
+ *          \p offset or \p err field of each \p partitions' element is filled
+ *          in with the stored offset, or a partition specific error.
+ *          Else returns an error code.
+ */
+RD_EXPORT rd_kafka_resp_err_t
 rd_kafka_position (rd_kafka_t *rk,
-                   rd_kafka_topic_partition_list_t *partitions,
-                   int timeout_ms);
+		   rd_kafka_topic_partition_list_t *partitions);
+
 
 /**@}*/
 

@@ -115,7 +115,7 @@ std::string get_debug_contexts();
  *
  * @returns 0 if all kafka objects are now destroyed, or -1 if the
  * timeout was reached.
- * Since RdKafka handle deletion is an asynch operation the 
+ * Since RdKafka handle deletion is an asynch operation the
  * \p wait_destroyed() function can be used for applications where
  * a clean shutdown is required.
  */
@@ -214,6 +214,8 @@ enum ErrorCode {
 	ERR__AUTHENTICATION = -169,
 	/** No stored offset */
 	ERR__NO_OFFSET = -168,
+	/** Outdated */
+	ERR__OUTDATED = -167,
 	/** End internal error codes */
 	ERR__END = -100,
 
@@ -329,7 +331,7 @@ class KafkaConsumer;
  * The delivery report callback will be called once for each message
  * accepted by RdKafka::Producer::produce() (et.al) with
  * RdKafka::Message::err() set to indicate the result of the produce request.
- * 
+ *
  * The callback is called when a message is succesfully produced or
  * if librdkafka encountered a permanent failure, or the retry counter for
  * temporary errors has been exhausted.
@@ -344,6 +346,8 @@ class RD_EXPORT DeliveryReportCb {
    * @brief Delivery report callback.
    */
   virtual void dr_cb (Message &message) = 0;
+
+  virtual ~DeliveryReportCb() { }
 };
 
 
@@ -376,6 +380,8 @@ class RD_EXPORT PartitionerCb {
                                   const std::string *key,
                                   int32_t partition_cnt,
                                   void *msg_opaque) = 0;
+
+  virtual ~PartitionerCb() { }
 };
 
 /**
@@ -397,6 +403,8 @@ class PartitionerKeyPointerCb {
                                   size_t key_len,
                                   int32_t partition_cnt,
                                   void *msg_opaque) = 0;
+
+  virtual ~PartitionerKeyPointerCb() { }
 };
 
 
@@ -417,6 +425,8 @@ class RD_EXPORT EventCb {
    * @sa RdKafka::Event
    */
   virtual void event_cb (Event &event) = 0;
+
+  virtual ~EventCb() { }
 };
 
 
@@ -445,7 +455,7 @@ class RD_EXPORT Event {
     EVENT_SEVERITY_DEBUG = 7
   };
 
-  ~Event () {};
+  virtual ~Event () { }
 
   /*
    * Event Accessor methods
@@ -515,6 +525,8 @@ class RD_EXPORT ConsumeCb {
    * The callback interface is optional but provides increased performance.
    */
   virtual void consume_cb (Message &message, void *opaque) = 0;
+
+  virtual ~ConsumeCb() { }
 };
 
 
@@ -575,6 +587,8 @@ public:
  virtual void rebalance_cb (RdKafka::KafkaConsumer *consumer,
 			    RdKafka::ErrorCode err,
                             std::vector<TopicPartition*>&partitions) = 0;
+
+ virtual ~RebalanceCb() { }
 };
 
 
@@ -600,6 +614,8 @@ public:
    */
   virtual void offset_commit_cb(RdKafka::ErrorCode err,
                                 std::vector<TopicPartition*>&offsets) = 0;
+
+  virtual ~OffsetCommitCb() { }
 };
 
 
@@ -624,6 +640,8 @@ class RD_EXPORT SocketCb {
    * @returns The socket file descriptor or -1 on error (\c errno must be set)
    */
   virtual int socket_cb (int domain, int type, int protocol) = 0;
+
+  virtual ~SocketCb() { }
 };
 
 
@@ -645,6 +663,8 @@ class RD_EXPORT OpenCb {
    * @remark Not currently available on native Win32
    */
   virtual int open_cb (const std::string &path, int flags, int mode) = 0;
+
+  virtual ~OpenCb() { }
 };
 
 
@@ -696,7 +716,7 @@ class RD_EXPORT Conf {
    */
   static Conf *create (ConfType type);
 
-  virtual ~Conf () { };
+  virtual ~Conf () { }
 
   /**
    * @brief Set configuration property \p name to value \p value.
@@ -781,7 +801,7 @@ class RD_EXPORT Conf {
  */
 class RD_EXPORT Handle {
  public:
-  virtual ~Handle() {};
+  virtual ~Handle() { }
 
   /** @returns the name of the handle */
   virtual const std::string name () const = 0;
@@ -979,7 +999,7 @@ class RD_EXPORT Topic {
   /**
    * @brief Creates a new topic handle for topic named \p topic_str
    *
-   * \p conf is an optional configuration for the topic  that will be used 
+   * \p conf is an optional configuration for the topic  that will be used
    * instead of the default topic configuration.
    * The \p conf object is reusable after this call.
    *
@@ -1003,7 +1023,7 @@ class RD_EXPORT Topic {
 
   /**
    * @brief Store offset \p offset for topic partition \p partition.
-   * The offset will be commited (written) to the offset store according
+   * The offset will be committed (written) to the offset store according
    * to \p auto.commit.interval.ms.
    *
    * @remark This API should only be used with the simple RdKafka::Consumer,
@@ -1028,7 +1048,7 @@ class RD_EXPORT Topic {
 
 /**
  * @brief Message object
- * 
+ *
  * This object represents either a single consumed or produced message,
  * or an event (\p err() is set).
  *
@@ -1233,7 +1253,7 @@ public:
   /**
    * @brief Commit offsets for the current assignment.
    *
-   * @remark This is the synchronous variant that blocks until offsets 
+   * @remark This is the synchronous variant that blocks until offsets
    *         are committed or the commit fails (see return value).
    *
    * @remark If a RdKafka::OffsetCommitCb callback is registered it will
@@ -1286,15 +1306,25 @@ public:
 
 
   /**
-   * @brief Retrieve committed positions (offsets) for topics+partitions.
+   * @brief Retrieve committed offsets for topics+partitions.
    *
    * @returns RD_KAFKA_RESP_ERR_NO_ERROR on success in which case the
    *          \p offset or \p err field of each \p partitions' element is filled
    *          in with the stored offset, or a partition specific error.
    *          Else returns an error code.
    */
-  virtual ErrorCode position (std::vector<TopicPartition*> &partitions,
-                              int timeout_ms) = 0;
+  virtual ErrorCode committed (std::vector<TopicPartition*> &partitions,
+			       int timeout_ms) = 0;
+
+  /**
+   * @brief Retrieve current positions (offsets) for topics+partitions.
+   *
+   * @returns RD_KAFKA_RESP_ERR_NO_ERROR on success in which case the
+   *          \p offset or \p err field of each \p partitions' element is filled
+   *          in with the stored offset, or a partition specific error.
+   *          Else returns an error code.
+   */
+  virtual ErrorCode position (std::vector<TopicPartition*> &partitions) = 0;
 
 
   /**
