@@ -44,7 +44,11 @@
 #pragma once
 
 #include <stdio.h>
+#if _MSC_VER <= 1600
+#include <stdint.h>
+#else
 #include <inttypes.h>
+#endif
 #include <sys/types.h>
 
 #ifdef __cplusplus

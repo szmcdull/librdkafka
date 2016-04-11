@@ -24,3 +24,6 @@ gmon.out
 *.deb
 *.rpm
 staging-docs
+win32/librdkafka.vcxproj
+*/Release/
+*/Debug/

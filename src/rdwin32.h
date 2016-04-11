@@ -33,7 +33,11 @@
 
 
 #include <stdlib.h>
+#if _MSC_VER <= 1600
+#include <stdint.h>
+#else
 #include <inttypes.h>
+#endif
 #include <sys/types.h>
 #include <assert.h>
 
